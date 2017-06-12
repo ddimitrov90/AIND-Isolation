@@ -10,6 +10,7 @@ be available to project reviewers.
 import random
 import timeit
 from copy import copy
+from copy import deepcopy
 
 TIME_LIMIT_MILLIS = 150
 
@@ -52,8 +53,22 @@ class Board(object):
         self._board_state[-1] = Board.NOT_MOVED
         self._board_state[-2] = Board.NOT_MOVED
 
+        self._legal_moves_weights = [
+            [2, 3, 4, 4, 4, 3, 2],
+            [3, 4, 6, 6, 6, 4, 3],
+            [4, 6, 8, 8, 8, 6, 4],
+            [4, 6, 8, 8, 8, 6, 4],
+            [4, 6, 8, 8, 8, 6, 4],
+            [3, 4, 6, 6, 6, 4, 3],
+            [2, 3, 4, 4, 4, 3, 2],
+        ]
+
     def hash(self):
         return str(self._board_state).__hash__()
+
+    def hashBoardState(self):
+        only_board = self._board_state[:-3]
+        return str(only_board).__hash__()
 
     @property
     def active_player(self):
@@ -97,6 +112,7 @@ class Board(object):
         new_board._active_player = self._active_player
         new_board._inactive_player = self._inactive_player
         new_board._board_state = copy(self._board_state)
+        new_board._legal_moves_weights = deepcopy(self._legal_moves_weights)
         return new_board
 
     def forecast_move(self, move):
@@ -204,8 +220,16 @@ class Board(object):
         self._board_state[-last_move_idx] = idx
         self._board_state[idx] = 1
         self._board_state[-3] ^= 1
+
+        self._legal_moves_weights[move[0]][move[1]] = 0
+        for m in self.get_legal_moves():
+            self._legal_moves_weights[m[0]][m[1]] -= 1
+
         self._active_player, self._inactive_player = self._inactive_player, self._active_player
         self.move_count += 1
+
+    def get_legal_moves_weights(self):
+        return self._legal_moves_weights
 
     def is_winner(self, player):
         """ Test whether the specified player has won the game. """
